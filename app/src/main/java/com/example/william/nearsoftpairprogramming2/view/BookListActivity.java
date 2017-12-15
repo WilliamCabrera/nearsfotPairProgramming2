@@ -200,6 +200,7 @@ public class BookListActivity extends AppCompatActivity implements BookItemClick
         {
             adapterType = savedInstanceState.getInt("adapterType");
             List<Book> savedBooks = savedInstanceState.getParcelableArrayList(LIST_STATE_KEY);
+            if(savedBooks!=null)
             for (Book book : savedBooks)
             {
                 books.add(book);
@@ -265,6 +266,7 @@ public class BookListActivity extends AppCompatActivity implements BookItemClick
     @Override
     public void postMessage(String msg) {
 
+        floatingActionButton.setEnabled(true);
         Toast.makeText(this,msg,Toast.LENGTH_LONG).show();
     }
 
