@@ -5,6 +5,8 @@ import android.os.PersistableBundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.View;
 
 
 import com.example.william.nearsoftpairprogramming2.NearsoftApplication;
@@ -35,7 +37,15 @@ public class BookDetailActivity extends AppCompatActivity {
 
         pager = (ViewPager)findViewById(R.id.view_pager);
 
-
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
 
         ((NearsoftApplication)getApplication())
                 .getApplicationComponent()

@@ -2,6 +2,7 @@ package com.example.william.nearsoftpairprogramming2.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,15 +50,22 @@ public class BookListItemAdapter extends RecyclerView.Adapter<BookListItemAdapte
     @Override
     public void onBindViewHolder(ItemViewHolder holder, int position) {
 
-        holder.bookTitle .setText(bookList.get(position).getVolumeInfo().getTitle());
+            try
+            {
+                holder.bookTitle .setText(bookList.get(position).getVolumeInfo().getTitle());
 
-        if(adapterType == 1)
-        holder.bookAuthor .setText(bookList.get(position).getVolumeInfo().getAuthors(). size() > 0 ? bookList.get(position).getVolumeInfo().getAuthors().get(0) : "");
+                if(adapterType == 1)
+                    holder.bookAuthor .setText(bookList.get(position).getVolumeInfo().getAuthors(). size() > 0 ? bookList.get(position).getVolumeInfo().getAuthors().get(0) : "");
 
-        Picasso.with(context)
-                .load(bookList.get(position)
-                .getVolumeInfo().getImageLinks()
-                .getThumbnail()).into(holder.bookPicture);
+                Picasso.with(context)
+                        .load(bookList.get(position)
+                                .getVolumeInfo().getImageLinks()
+                                .getThumbnail()).into(holder.bookPicture);
+            }catch (Exception ex)
+            {
+
+            }
+
         holder.setOnclickListener(position);
 
     }

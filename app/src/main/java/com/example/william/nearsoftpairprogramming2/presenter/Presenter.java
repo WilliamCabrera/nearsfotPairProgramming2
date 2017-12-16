@@ -38,19 +38,21 @@ public class Presenter implements IPresenter {
 
                 if(response.isSuccessful())
                 {
-                       view.updateView(response.body().getItems());
+                       view.notifyChangeToRecycler(response.body().getItems());
                     view.postMessage("Books counts: "+response.body().getItems().size());
                 }
                 else
                 {
                     view.postMessage("Error finding list on server");
                 }
+                view.updateView();
             }
 
             @Override
             public void onFailure(Call<BookBlock> call, Throwable t) {
 
                 view.postMessage("Error connecting with server: "+t.getMessage());
+                view.updateView();
             }
         });
     }

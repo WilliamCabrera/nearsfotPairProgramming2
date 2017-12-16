@@ -8,11 +8,11 @@ import java.util.List;
  * Created by William on 12/14/2017.
  */
 
-public interface IView {
-
-    void updateView(List<Book> bookList);
+public interface IView
+{
+    void updateView();
 
     void postMessage(String msg);
 
-
+    void notifyChangeToRecycler(List<Book> bookList);
 }

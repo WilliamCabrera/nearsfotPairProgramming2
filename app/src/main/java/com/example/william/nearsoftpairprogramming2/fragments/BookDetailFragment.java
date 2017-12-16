@@ -94,38 +94,12 @@ public class BookDetailFragment extends Fragment {
             }
             else
             {
-                Picasso.with(getActivity())
-                        .load(book.getVolumeInfo().getImageLinks().getThumbnail())
-                        .into(imageView, new Callback() {
-                            @Override
-                            public void onSuccess() {
-
-                                //Toast.makeText(getActivity(),"picture found",Toast.LENGTH_SHORT).show();
-                            }
-
-                            @Override
-                            public void onError() {
-                                Toast.makeText(getActivity(),"picture not found",Toast.LENGTH_SHORT).show();
-                            }
-                        });
+               loadImage(book);
             }
         }
         else
         {
-            Picasso.with(getActivity())
-                    .load(book.getVolumeInfo().getImageLinks().getThumbnail())
-                    .into(imageView, new Callback() {
-                        @Override
-                        public void onSuccess() {
-
-                            //Toast.makeText(getActivity(),"picture found",Toast.LENGTH_SHORT).show();
-                        }
-
-                        @Override
-                        public void onError() {
-                            Toast.makeText(getActivity(),"picture not found",Toast.LENGTH_SHORT).show();
-                        }
-                    });
+           loadImage(book);
         }
 
 
@@ -165,6 +139,30 @@ public class BookDetailFragment extends Fragment {
         }
     }
 
+    void loadImage(Book book)
+    {
+        try
+        {
+            Picasso.with(getActivity())
+                    .load(book.getVolumeInfo().getImageLinks().getThumbnail())
+                    .into(imageView, new Callback() {
+                        @Override
+                        public void onSuccess() {
+
+                            //Toast.makeText(getActivity(),"picture found",Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onError() {
+                            Toast.makeText(getActivity(),"picture not found",Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -173,20 +171,8 @@ public class BookDetailFragment extends Fragment {
         {
             if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
             {
-                Picasso.with(getActivity())
-                        .load(book.getVolumeInfo().getImageLinks().getThumbnail())
-                        .into(imageView, new Callback() {
-                            @Override
-                            public void onSuccess() {
 
-                                //Toast.makeText(getActivity(),"picture found",Toast.LENGTH_SHORT).show();
-                            }
-
-                            @Override
-                            public void onError() {
-                                Toast.makeText(getActivity(),"picture not found",Toast.LENGTH_SHORT).show();
-                            }
-                        });
+              loadImage(book);
             }
             else
             {

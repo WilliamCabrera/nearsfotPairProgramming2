@@ -5,6 +5,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -19,7 +20,9 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 
@@ -30,6 +33,8 @@ import com.example.william.nearsoftpairprogramming2.interfaces.BookItemClickList
 import com.example.william.nearsoftpairprogramming2.model.Book;
 
 import com.example.william.nearsoftpairprogramming2.model.BookRepository;
+import com.example.william.nearsoftpairprogramming2.model.ImageLink;
+import com.example.william.nearsoftpairprogramming2.model.VolumenInfo;
 import com.example.william.nearsoftpairprogramming2.presenter.IPresenter;
 import com.example.william.nearsoftpairprogramming2.presenter.Presenter;
 import com.example.william.nearsoftpairprogramming2.retrofit.BookRetrofitApi2;
@@ -42,12 +47,10 @@ import java.util.Vector;
 
 import javax.inject.Inject;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
-
 public class BookListActivity extends AppCompatActivity implements BookItemClickListerner,IView {
 
 
+    private ProgressBar progressBar;
     private RecyclerView bookRecyclerView;
     private BookListItemAdapter bookListItemAdapter;
     private List<Book> books = new Vector<>();
@@ -61,11 +64,18 @@ public class BookListActivity extends AppCompatActivity implements BookItemClick
     FloatingActionButton floatingActionButton;
 
     IPresenter presenter;
+    LinearLayoutManager lm;
+    GridLayoutManager glm;
 
     private int startValue = 0;
-    private int maxValue = 10;
-    private int adapterType = AdapterType.GRIDLAYOUTMANAGER;
+    private int maxValue = 20;
+    private int adapterType = AdapterType.LINEARLAYOUTMANAGER;
     private int REQUEST_INTERNET = 1;
+
+    private static final int MAX_ITEMS_PER_REQUEST = 20;
+    private static final int NUMBER_OF_ITEMS = 100;
+    private static final int SIMULATED_LOADING_TIME_IN_MS = 1500;
+    private int page;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,11 +88,13 @@ public class BookListActivity extends AppCompatActivity implements BookItemClick
 
         presenter = new Presenter(this, new BookRepository(retrofitApi2));
 
+        progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         floatingActionButton = (FloatingActionButton)findViewById(R.id.loadBooks) ;
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
             public void onClick(View view) {
+
 
                 if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                 {
@@ -93,16 +105,21 @@ public class BookListActivity extends AppCompatActivity implements BookItemClick
                     }
                     else
                     {
+
                         triggerLoad("android", startValue, maxValue);
                     }
                 }
                 else
+                {
+
                     triggerLoad("android", startValue, maxValue);
+                }
+
             }
         });
 
-        LinearLayoutManager lm = new LinearLayoutManager(this);
-        GridLayoutManager glm = new GridLayoutManager(this,3);
+        lm = new LinearLayoutManager(this);
+        glm = new GridLayoutManager(this,3);
 
         bookRecyclerView = (RecyclerView)findViewById(R.id.bookListRecyclerView);
         if(adapterType == AdapterType.LINEARLAYOUTMANAGER)
@@ -116,55 +133,52 @@ public class BookListActivity extends AppCompatActivity implements BookItemClick
         bookRecyclerView.addItemDecoration(new ItemSpaceDecoration(3));
         bookRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-
-
-            }
-
-            @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                int lastCompletelyVisibleItemPosition = 0;
 
-                lastCompletelyVisibleItemPosition = ((LinearLayoutManager) recyclerView.getLayoutManager()).findLastVisibleItemPosition();
-                if(lastCompletelyVisibleItemPosition == books.size() - 1)
+                final int visibleItemsCount = (adapterType == AdapterType.LINEARLAYOUTMANAGER ?  lm.getChildCount() : glm.getChildCount());
+                final int totalItemsCount = ( adapterType == AdapterType.LINEARLAYOUTMANAGER ?  lm.getItemCount(): glm.getItemCount());
+                final int pastVisibleItemsCount = (  adapterType == AdapterType.LINEARLAYOUTMANAGER ? lm.findFirstVisibleItemPosition() : glm.findFirstVisibleItemPosition());
+                final boolean lastItemShown = visibleItemsCount + pastVisibleItemsCount >= totalItemsCount;
+
+
+                Log.d("------",String.format("visibleItemsCount: %s, totalItemsCount: %s, pastVisibleItemsCount: %s, lastItemShown: %s",visibleItemsCount,totalItemsCount,pastVisibleItemsCount,lastItemShown));
+
+                if(lastItemShown)
                 {
 
-                        //Toast.makeText(getApplicationContext(),lastCompletelyVisibleItemPosition+ " : "+(books.size() - 1),Toast.LENGTH_SHORT).show();
-
-                       /*
-                       startValue+= 10;
-                        maxValue+=10;
-                        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    {
+                        int permissionCheck = ActivityCompat.checkSelfPermission(BookListActivity.this, Manifest.permission.WRITE_CALENDAR);
+                        if(permissionCheck == PackageManager.PERMISSION_GRANTED)
                         {
-                            int permissionCheck = ActivityCompat.checkSelfPermission(BookListActivity.this, Manifest.permission.INTERNET);
-                            if(permissionCheck != PackageManager.PERMISSION_GRANTED)
-                            {
-                                ActivityCompat.requestPermissions(BookListActivity.this, new String[]{Manifest.permission.INTERNET},REQUEST_INTERNET);
-                            }
-                            else
-                            {
-                                triggerLoad("android", startValue, maxValue);
-                            }
+                            startValue+= 10;
+                            triggerLoad("android", startValue, maxValue);
                         }
-                        else
-                            triggerLoad("android", startValue, maxValue);*/
 
-
-
+                    }
+                    else
+                    {
+                        startValue+= 10;
+                        triggerLoad("android", startValue, maxValue);
+                    }
                 }
             }
         });
 
+
     }
+
+
 
     private void triggerLoad(String query, int startValue, int maxValue){
 
-        Toast.makeText(getApplicationContext(),"Request sent to the server, please wait....",Toast.LENGTH_LONG).show();
-        floatingActionButton.setEnabled(false);
-        presenter.getBooks("android",startValue,maxValue);
-
+        if(books.size() < 60)
+        {
+            progressBar.setVisibility(View.VISIBLE);
+            floatingActionButton.setEnabled(false);
+            presenter.getBooks("android",startValue,maxValue);
+        }
     }
 
     @Override
@@ -254,13 +268,22 @@ public class BookListActivity extends AppCompatActivity implements BookItemClick
     }
 
     @Override
-    public void updateView(List<Book> bookList) {
+    public void notifyChangeToRecycler(List<Book> bookList) {
 
-        books = bookList;
+        books.addAll(bookList);
+        //books = bookList;
         bookListItemAdapter = new BookListItemAdapter(books, BookListActivity.this,adapterType);
         bookRecyclerView.setAdapter(bookListItemAdapter);
         bookListItemAdapter.notifyDataSetChanged();
+
+    }
+
+    @Override
+    public void updateView() {
+
         floatingActionButton.setEnabled(true);
+        if(progressBar.getVisibility() == View.VISIBLE)
+            progressBar.setVisibility(View.GONE);
     }
 
     @Override
@@ -303,6 +326,55 @@ public class BookListActivity extends AppCompatActivity implements BookItemClick
                 Toast.makeText(getApplicationContext(),"Internet permission was NOT granted.",Toast.LENGTH_SHORT).show(); ;
             }
         }
+    }
+
+
+
+    private void simulateLoading() {
+        new AsyncTask<Void, Void, Void>() {
+            @Override protected void onPreExecute() {
+                progressBar.setVisibility(View.VISIBLE);
+            }
+
+            @Override protected Void doInBackground(Void... params) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Log.e("MainActivity", e.getMessage());
+                }
+                return null;
+            }
+
+            @Override protected void onPostExecute(Void param) {
+                progressBar.setVisibility(View.GONE);
+            }
+        }.execute();
+    }
+
+    private Book fakeBook(String name, String author, String date)
+    {
+        List<String> authors = new Vector<>();
+        authors.add(author);
+        VolumenInfo volumenInfo = new VolumenInfo();
+        volumenInfo.setAuthors(authors);
+        volumenInfo.setDescription(name+" : "+ author+" : "+date);
+        volumenInfo.setPublishedDate(date);
+        volumenInfo.setTitle(name);
+        volumenInfo.setImageLinks(new ImageLink(""));
+        Book book = new Book();
+        book.setVolumeInfo(volumenInfo);
+        return  book;
+    }
+
+    private List<Book> generateListOfBooks()
+    {
+        List<Book> result = new Vector<>();
+
+        for (int i = 0; i< 20; i ++)
+        {
+            result.add(fakeBook(" title: "+i, "author: "+ i,"date: "+i));
+        }
+        return result;
     }
 
 
